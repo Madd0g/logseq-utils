@@ -20,7 +20,7 @@ This little template+script imports a reddit post or a comment sub-thread and be
 * [optional] since this is a 2-step process (only after clicking "fetch" the thread is embedded), this means you can put the result of the 1st step (after inserting the link) into another template
 
 
-Create this template in one of your pages (recommended: separate `templates.md` file)
+Start by inserting this template in one of your pages (recommended: separate `templates.md` file)
 
 ```
 [reddit]() @@html: <button onclick="Function(document.getElementById('fetch-reddit-code').innerHTML)()(this)">↻ fetch thread</button>@@
