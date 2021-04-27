@@ -22,7 +22,7 @@ This little template+script imports a reddit post or a comment sub-thread and be
 Create this template in one of your pages (recommended: separate `templates.md` file)
 
 ```
-## [reddit]() @@html: <button onclick="Function(document.getElementById('fetch-reddit-code').innerHTML)()(this)">↻ fetch thread</button>@@
+[reddit]() @@html: <button onclick="Function(document.getElementById('fetch-reddit-code').innerHTML)()(this)">↻ fetch thread</button>@@
 :PROPERTIES:
 :template: embed-reddit
 :END:
@@ -32,7 +32,7 @@ return function(button) {
         elem.dispatchEvent(new KeyboardEvent("keydown", { keyCode: 27 }));
     }
     
-    async function fetchRedditAsMarkdown(href) {
+    async function fetchRedditAsMarkdown(href, extraFirstLineText) {
         function fix(str = '') {
             var reg = new RegExp("([\(\)\[\],])", "gi");
             return str
@@ -92,7 +92,7 @@ return function(button) {
                 let firstComment = commentThread.data.children[0].data;
                 firstComment.kind = commentThread.data.children[0].kind;
                 let commentsBody = formatBody(firstComment, 3);
-                let result = `## ${commentCounter} comments from [${fix(postData.title)}](https://www.reddit.com${postData.permalink}) in [r/${fix(postData.subreddit)}](https://www.reddit.com/${postData.subreddit}) by ${fix(postData.author)}${flair}\n${commentsBody.trim()}`;
+                let result = `## ${commentCounter} comments from [${fix(postData.title)}](https://www.reddit.com${postData.permalink}) in [r/${fix(postData.subreddit)}](https://www.reddit.com/${postData.subreddit}) by ${fix(postData.author)}${flair}${extraFirstLineText || ''}\n${commentsBody.trim()}`;
                 return result;
             }
         } else if (type === 'overview') {
@@ -102,7 +102,7 @@ return function(button) {
             });
             let commentsBody = comments.join('\n');
             
-            let result = `## Overview of ${href} \n${commentsBody.trim()}`;
+            let result = `## Overview of ${href}${extraFirstLineText || ''}\n${commentsBody.trim()}`;
             return result;
         } else {
             let comments = commentThread.data.children.map((c) => {
@@ -111,7 +111,7 @@ return function(button) {
             });
             let commentsBody = comments.join('\n');
             
-            let result = `## Post with ${commentCounter} comments from [${fix(postData.title)}](https://www.reddit.com${postData.permalink}) in [r/${fix(postData.subreddit)}](https://www.reddit.com/${postData.subreddit}) by ${fix(postData.author)}${flair}\n${postData.is_self ? postData.selftext.replace(/^#/, '\\#').replace(/\n#/g, '\n\\#') : postData.url}\n${commentsBody.trim()}`;
+            let result = `## Post with ${commentCounter} comments from [${fix(postData.title)}](https://www.reddit.com${postData.permalink}) in [r/${fix(postData.subreddit)}](https://www.reddit.com/${postData.subreddit}) by ${fix(postData.author)}${flair}${extraFirstLineText || ''}\n${postData.is_self ? postData.selftext.replace(/^#/, '\\#').replace(/\n#/g, '\n\\#') : postData.url}\n${commentsBody.trim()}`;
             return result;
         }
     }
@@ -154,6 +154,8 @@ return function(button) {
     let block = button.closest('.ls-block');
     let redditDiv = button.closest('#reddit');
     let link = redditDiv.querySelector('a[href]');
+    let tags = Array.from(redditDiv.querySelectorAll('.tag')).map((t) => t.innerText).join(' ');
+    tags = tags ? (' ' + tags) : '';
     let ahref = link?.href;
     if (!ahref || !ahref.includes('reddit.com')) {
         alert('url should include reddit.com');
@@ -171,7 +173,7 @@ return function(button) {
             await new Promise(r => setTimeout(r, 50));
             pressEsc(textarea);
         }
-        let newMd = await fetchRedditAsMarkdown(ahref);
+        let newMd = await fetchRedditAsMarkdown(ahref, tags);
         textarea.value = newMd;
         await new Promise(r => setTimeout(r, 200));
         pressEsc(textarea);
@@ -179,10 +181,10 @@ return function(button) {
 }
 </script>
 <style>
-    #reddit a:not([href*="reddit.com"]):after {
+    #reddit a.external-link:not([href*="reddit.com"]):after {
         content: " (NEEDS A REDDIT URL)"
     }
-    #reddit a:not([href*="reddit.com"]) {
+    #reddit a.external-link:not([href*="reddit.com"]) {
         color: white !important;
         background-color: red !important;
     }
