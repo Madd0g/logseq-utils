@@ -13,6 +13,8 @@ This little template+script imports a reddit post or a comment sub-thread and be
 * update the link inside `[reddit](>>HERE<<)` with a reddit.com link
   * to a post page - `https://www.reddit.com/r/<subreddit>/comments/<id>/<title>`
   * or a comments sub-thread - `https://www.reddit.com/r/<subreddit>/comments/<id>/<title>/<comment-id>`
+  * or to a user page (even with parameters!) - `https://www.reddit.com/user/<username>/?sort=top&t=day`
+  * or to a subreddit (even with parameters!) - `https://www.reddit.com/r/<subreddit>/top/?sort=top&t=week`
 * hit escape
 * click "fetch thread button"
 
@@ -41,14 +43,21 @@ return function(button) {
         function formatBody(comment, level) {
             commentCounter++;
             let author = fix(comment.author);
-            let body = comment.body;
+            let isComment = comment.kind === 't1';
+            let body = isComment ? comment.body.replace(/^#/, '\\#').replace(/\n#/g, '\n\\#') : comment.is_self ? comment.selftext.replace(/^#/, '\\#').replace(/\n#/g, '\n\\#') : comment.url;
+            
             level = level > 0 && level || 2;
-            let isOp = comment.author === postData.author;
-            let fixedBody = (body || '').replace(/^#/, '\\#').replace(/\n#/g, '\n\\#');
-            let ret = [`${"#".repeat(level)} [comment](https://www.reddit.com${(comment.permalink)}) by ${author} ${isOp ? "(OP)" : ""}\n${fixedBody}`];
+            let isOp = postData && comment.author === postData.author;
+            let fixedBody = (body || '');
+            let ret = [`${"#".repeat(level)} [${isComment ? 'comment' : fix(comment.title)}](https://www.reddit.com${(comment.permalink)}) by ${author} ${isOp ? "(OP)" : ""}\n${fixedBody}`];
             if (comment.replies?.data?.children?.length) {
                 comment.replies?.data?.children.reduce((acc, comment) => {
+                    if (comment.kind === "more") {
+                        return acc;
+                    }
+                    comment.data.kind = comment.kind;
                     acc.push(formatBody(comment.data, level + 1));
+                    
                     return acc;
                 }, ret);
             }
@@ -57,8 +66,8 @@ return function(button) {
                 .filter(Boolean)
                 .join('\n');
         }
-        
-        let url = href + '.json?raw_json=1&app=res';
+        let [pathname, search] = href.split('?');
+        let url = pathname + '.json?raw_json=1&app=res' + (search ? ('&' + search) : '');
         let response = await fetch(url);
         let json = await response.json();
         
@@ -70,17 +79,36 @@ return function(button) {
                 flair = ` | \\[[${firstFlair}]]`;
             }
         }
+        let type;
+        let isCommentOrPost = pathname.match(/\/r\/(?<sub>\w+?)\/comments\/(?<id>[\w\d]+)\/?(?:[\w_]+\/(?<cid>\w+)\/?)?/);
+        if (isCommentOrPost) {
+            type = isCommentOrPost.groups?.cid ? 'comment' : 'post';
+        } else {
+            type = 'overview';
+        }
         let commentThread = json[1];
-        let type = commentThread?.data?.children?.[0]?.length === 1 ? 'comment' : 'post';
         if (type === 'comment') {
             if (commentThread) {
                 let firstComment = commentThread.data.children[0].data;
+                firstComment.kind = commentThread.data.children[0].kind;
                 let commentsBody = formatBody(firstComment, 3);
                 let result = `## ${commentCounter} comments from [${fix(postData.title)}](https://www.reddit.com${postData.permalink}) in [r/${fix(postData.subreddit)}](https://www.reddit.com/${postData.subreddit}) by ${fix(postData.author)}${flair}\n${commentsBody.trim()}`;
                 return result;
             }
+        } else if (type === 'overview') {
+            let comments = json?.data?.children.map((c) => {
+                c.data.kind = c.kind;
+                return formatBody(c.data, 3);
+            });
+            let commentsBody = comments.join('\n');
+            
+            let result = `## Overview of ${href} \n${commentsBody.trim()}`;
+            return result;
         } else {
-            let comments = commentThread.data.children.map((c) => formatBody(c.data, 3));
+            let comments = commentThread.data.children.map((c) => {
+                c.data.kind = c.kind;
+                return formatBody(c.data, 3);
+            });
             let commentsBody = comments.join('\n');
             
             let result = `## Post with ${commentCounter} comments from [${fix(postData.title)}](https://www.reddit.com${postData.permalink}) in [r/${fix(postData.subreddit)}](https://www.reddit.com/${postData.subreddit}) by ${fix(postData.author)}${flair}\n${postData.is_self ? postData.selftext.replace(/^#/, '\\#').replace(/\n#/g, '\n\\#') : postData.url}\n${commentsBody.trim()}`;
@@ -126,8 +154,8 @@ return function(button) {
     let block = button.closest('.ls-block');
     let redditDiv = button.closest('#reddit');
     let link = redditDiv.querySelector('a[href]');
-    let href = link?.href;
-    if (!href || !href.includes('reddit.com')) {
+    let ahref = link?.href;
+    if (!ahref || !ahref.includes('reddit.com')) {
         alert('url should include reddit.com');
         return
     }
@@ -143,7 +171,7 @@ return function(button) {
             await new Promise(r => setTimeout(r, 50));
             pressEsc(textarea);
         }
-        let newMd = await fetchRedditAsMarkdown(href);
+        let newMd = await fetchRedditAsMarkdown(ahref);
         textarea.value = newMd;
         await new Promise(r => setTimeout(r, 200));
         pressEsc(textarea);
