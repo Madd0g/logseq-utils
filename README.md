@@ -3,8 +3,10 @@ My utilities for logseq
 
 # Reddit importer
 
-This little template+script imports a reddit post or a comment sub-thread and because it's markdown, it EMBEDS IT AS NESTED BLOCKS!!!  
-(sorry if I'm yelling, it's exciting)
+This interactive template imports stuff from reddit and because both Logseq and reddit use markdown, it gets embedded it as nested blocks!!!  
+
+<img width="1110" alt="image" src="https://user-images.githubusercontent.com/1171003/116170587-f4bc2c00-a6bb-11eb-9ae2-3e708c7dde06.png">
+
 
 ### Instructions
 
