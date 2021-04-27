@@ -413,9 +413,9 @@ b {
       --ls-icon-color: var(--base05l);
       --ls-search-icon-color: var(--ls-link-text-color);
       --ls-a-chosen-bg: var(--ls-secondary-background-color);
-      --ls-tag-background-color: var(--base0Fl);
-        --ls-tag-text-color: var(--base0El);
-        --ls-tag-text-colot-hover: var(--base0Fl);
+      --ls-tag-background-color: var(--base05);
+        --ls-tag-text-color: var(--base06);
+        --ls-tag-text-color-hover: var(--base05);
   }
 
 .white-theme .ls-block .bullet {
