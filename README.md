@@ -194,6 +194,94 @@ return function(button) {
 </style>
 ```
 
+# Article inliner
+
+This interactive template embeds an article inline (!!) after passing it through a readability algorithm
+
+#### NOTE: this adds 2 external libraries from public CDNs, use at your own risk, I will make a proper bundled version of this when plugins come to logseq
+
+### Instructions
+
+* Needs the [logseq.user.js](logseq.user.js) userscript (I run it with [violentmonkey](https://violentmonkey.github.io/))
+  * it adds a method to fetch HTML regardless of cors (thanks to [71/logseq-snippets](https://github.com/71/logseq-snippets) for this tip)
+  * it adds 2 libraries, one for converting HTML to markdown and one for readability
+* Paste the following template into your templates file
+* then (on another page) invoke the template
+* update the link inside `[link-here](>>HERE<<)` with a link to a page with an article (no JS apps supported of course, regular pages only)
+* hit escape
+* click "inline article" button
+
+Start by inserting this template in one of your pages (recommended: separate `templates.md` file)
+
+```
+[link-here]() @@html: <button onclick="Function(document.getElementById('inline-article').innerHTML)()(this)">↻ inline article</button>@@
+:PROPERTIES:
+:template: article-link
+:END:
+<script id="inline-article">
+return function(button) {
+    function pressEsc(elem) {
+        elem.dispatchEvent(new KeyboardEvent("keydown", { keyCode: 27 }));
+    }
+    
+    function rightClickElement(el, leftClick) {
+        var ev1 = new MouseEvent("mousedown", {
+            bubbles: true,
+            cancelable: false,
+            view: window,
+            button: leftClick ? 1 : 2,
+            // buttons: 2,
+            clientX: el.getBoundingClientRect().x,
+            clientY: el.getBoundingClientRect().y
+        });
+        
+        el.dispatchEvent(ev1);
+        var ev2 = new MouseEvent("mouseup", {
+            bubbles: true,
+            cancelable: false,
+            view: window,
+            button: leftClick ? 1 : 2,
+            buttons: 0,
+            clientX: el.getBoundingClientRect().x,
+            clientY: el.getBoundingClientRect().y
+        });
+        el.dispatchEvent(ev2);
+        if (!leftClick) {
+            var ev3 = new MouseEvent("contextmenu", {
+                bubbles: true,
+                cancelable: false,
+                view: window,
+                button: 2,
+                buttons: 0,
+                clientX: el.getBoundingClientRect().x,
+                clientY: el.getBoundingClientRect().y
+            });
+            el.dispatchEvent(ev3);
+        }
+    }
+    if (!window.pageToMarkdown) {
+       console.warn('this requires a global "pageToMarkdown" function created by the userscript!!')
+    }
+    let block = button.closest('.ls-block');
+    let noteDiv = block.querySelector('.external-link').closest('div');
+    let link = noteDiv.querySelector('a[href]');
+    let oldContent = link.innerText;
+    let ahref = link?.href;
+    
+    rightClickElement(noteDiv, true);
+    setTimeout(async () => {
+        let textarea = block.querySelector('textarea');
+        let result = await pageToMarkdown(ahref);
+        let {title, md} = result;
+        textarea.value = `[${title || oldContent}](${ahref})\n\n${md}`;
+        await new Promise(r => setTimeout(r, 200));
+        pressEsc(textarea);
+    }, 10);
+}
+</script>
+```
+
+
 ## References
 
 The inspiration for this feature came from [71/logseq-snippets](https://github.com/71/logseq-snippets#rss-page)
