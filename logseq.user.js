@@ -18,17 +18,6 @@ unsafeWindow.fetchNoCors = (url) => new Promise((resolve, reject) => GM_xmlhttpR
   onloadend: (res) => resolve({ async text() { return res.responseText; } }),
 }));
 
-
-// press grant button automatically to bring up the native prompt
-setInterval(() => {
-  let panel = document.querySelector('.ui__modal-panel');
-  if (!panel || !panel.innerText.includes('native filesystem')) {
-    return;
-  }
-  panel.querySelector(' .ui__button').click();
-}, 500);
-
-
 // pages to markdown
 var scr = unsafeWindow.document.createElement('script');
 scr.src = "https://unpkg.com/turndown/dist/turndown.js";
