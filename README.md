@@ -275,7 +275,8 @@ return function(button) {
         let textarea = block.querySelector('textarea');
         let result = await pageToMarkdown(ahref);
         let {title, md} = result;
-        textarea.value = `[${title || oldContent}](${ahref})\n\n${md}`;
+        let fixedBody = md.replace(/^#/, '\\#').replace(/\n#/g, '\n\\#');
+        textarea.value = `[${title || oldContent}](${ahref})\n\n${fixedBody}`;
         await new Promise(r => setTimeout(r, 200));
         pressEsc(textarea);
     }, 10);
