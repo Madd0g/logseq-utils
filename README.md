@@ -198,7 +198,9 @@ return function(button) {
 
 This interactive template embeds an article inline (!!) after passing it through a readability algorithm
 
-#### NOTE: this adds 2 external libraries from public CDNs, use at your own risk, I will make a proper bundled version of this when plugins come to logseq
+![image](https://user-images.githubusercontent.com/1171003/116480865-00802d80-a837-11eb-9c98-ab03fa35896b.png)
+
+#### NOTE: the userscript adds 2 external libraries from public CDNs, use at your own risk, I will make a proper bundled version of this when plugins come to logseq
 
 ### Instructions
 
